@@ -248,9 +248,25 @@ def main():
 
 	parser.add_argument('-r', '--raw', action='store_true', default=False)
 
+	parser.add_argument('--name', action='store_true', default=False)
+
 	args = parser.parse_args()
 
-	eagle(args.infile, args).run()
+	if args.name:
+		CONSTANTS.titles.remove('guru')
+
+		with open(args.infile, 'r') as r_file:
+			reader = csv.reader(r_file, delimiter="\t")
+			for row in reader:
+				name = re.sub('[\t\r\n]', '', row[0].strip()).encode('ascii', 'ignore').lower()
+				name = HumanName(name)
+				name.capitalize()
+				print "%s -> %s, %s" % (row[0], name.last, name.first)
+
+
+		
+	else:
+		eagle(args.infile, args).run()
 
 
 if __name__ == '__main__':

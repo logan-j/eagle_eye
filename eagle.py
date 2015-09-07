@@ -11,9 +11,9 @@ import traceback
 from nameparser.config import CONSTANTS
 
 class eagle:
-	def __init__(self, directory):
+	def __init__(self, directory, args):
 		self.files = []
-
+		self.args = args
 		for root, dirs, files in os.walk(directory):
 			
 			for f in files:
@@ -22,16 +22,19 @@ class eagle:
 
 		CONSTANTS.titles.remove('guru')
 
-	def process(self, node):
-		pass
+	def process(self, r_node):
+		person = {'First Name': '', 'Last Name': '', 'Phone #s': '', 'Email': '',
+					'Move-In Date': '', 'Source 1': '', 'Source 2': '', 'Property': prop}
 	def write(self):
 		pass
 
 
 	def run(self):
 		print "Property Name\tFirst Name\tLast Name\tPhone Numbers\tEmail\tMove-In Date\tSource 1\tSource 2"
+		count = 0
 		for i, f in enumerate(self.files, 1):
 			people = []
+			
 			try:
 				node = lxml.parse(f)
 				sys.stderr.write("Working on %s: %s of %s\n" % (f, i, len(self.files)))
@@ -51,6 +54,8 @@ class eagle:
 					for item in zip(firsts, lasts):
 						person = {'First Name': '', 'Last Name': '', 'Phone #s': '', 'Email': '',
 									'Move-In Date': '', 'Source 1': '', 'Source 2': '', 'Property': prop}
+						person['raw'] = re.sub('[\t\r\n]', '', item[1].strip())
+						person['raw'] += ", %s" % re.sub('[\t\r\n]', '', item[0].strip())
 						first = re.split(' and |&', item[0].encode('ascii', 'ignore'))[0].lower()
 						last = re.split(' and |&', item[1].encode('ascii', 'ignore'))[0].lower()
 						name = HumanName(first + " " + last)
@@ -125,7 +130,10 @@ class eagle:
 					for item in f_name:
 						person = {'First Name': '', 'Last Name': '', 'Phone #s': '', 'Email': '',
 									'Move-In Date': '', 'Source 1': '', 'Source 2': '', 'Property': prop}
-						name = HumanName(subnode.xpath("./text()")[0].encode('ascii', 'ignore').strip().split(";")[0])
+						
+						text = item
+						person['raw'] = re.sub('[\t\n\r]', '', text.strip())
+						name = HumanName(text.encode('ascii', 'ignore').strip().split(";")[0])
 						name.capitalize()
 						person['First Name'] = name.first
 						person['Last Name'] = name.last
@@ -198,18 +206,33 @@ class eagle:
 			except Exception as inst:
 				traceback.print_exception(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2])
 
+			if not self.args.raw:
+				with open("A-LIST.csv", 'a') as w_file:
+					if len(people) > 0:
+						for person in people:
+							s1 = person['Source 1'].lower()
+							s2 = person['Source 2'].lower()
 
-			with open("A-LIST.csv", 'a') as w_file:
-				if len(people) > 0:
-					for person in people:
-						s1 = person['Source 1'].lower()
-						s2 = person['Source 2'].lower()
+							if ('apartment' in s1 and 'list' in s1) or ('apartment' in s2 and 'list' in s2):
 
-						if ('apartment' in s1 and 'list' in s1) or ('apartment' in s2 and 'list' in s2):
+								w_file.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (person['Property'], person['First Name'], person['Last Name'], person['Phone #s'], person['Email'], person['Move-In Date'], person['Source 1'], person['Source 2']))
+							else:
+								print "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (person['Property'], person['First Name'], person['Last Name'], person['Phone #s'], person['Email'], person['Move-In Date'], person['Source 1'], person['Source 2'])
+			else:
+				 with open("RAW_(%s).csv" % (count/100000), 'a') as a_file:
+				 	if len(people) > 0:
+				 		for person in people:
 
-							w_file.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (person['Property'], person['First Name'], person['Last Name'], person['Phone #s'], person['Email'], person['Move-In Date'], person['Source 1'], person['Source 2']))
-						else:
-							print "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (person['Property'], person['First Name'], person['Last Name'], person['Phone #s'], person['Email'], person['Move-In Date'], person['Source 1'], person['Source 2'])
+				 			s1 = person['Source 1']
+				 			s2 = person['Source 2']
+				 			source = ''
+				 			if len(s1) > 0: source = s1
+				 			elif len(s2) > 0: source = s2
+
+				 			a_file.write("%s\t%s\t%s\n" % (person['raw'].encode('ascii', 'ignore'), source, person['Property']))
+				 			count += 1
+
+
 			people = []
 
 
@@ -223,9 +246,11 @@ def main():
 
 	parser.add_argument('infile', nargs='?', type=str)
 
+	parser.add_argument('-r', '--raw', action='store_true', default=False)
+
 	args = parser.parse_args()
 
-	eagle(args.infile).run()
+	eagle(args.infile, args).run()
 
 
 if __name__ == '__main__':

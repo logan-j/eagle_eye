@@ -250,6 +250,8 @@ def main():
 
 	parser.add_argument('--name', action='store_true', default=False)
 
+	parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), default=sys.stdout)
+
 	args = parser.parse_args()
 
 	if args.name:
@@ -257,12 +259,13 @@ def main():
 
 		with open(args.infile, 'r') as r_file:
 			reader = csv.reader(r_file, delimiter="\t")
+			writer = csv.writer(args.outfile)
+			out = []
 			for row in reader:
 				name = re.sub('[\t\r\n]', '', row[0].strip()).encode('ascii', 'ignore').lower()
 				name = HumanName(name)
 				name.capitalize()
-				print "%s -> %s, %s" % (row[0], name.last, name.first)
-
+				writer.writerow([row[0], name.last, name.first])
 
 		
 	else:

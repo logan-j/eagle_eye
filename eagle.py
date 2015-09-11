@@ -20,7 +20,7 @@ class eagle:
 				
 				if not f.endswith("txt"): self.files.append(os.path.join(root,f))
 
-		CONSTANTS.titles.remove('guru', 'bart', 'do')
+		CONSTANTS.titles.remove('guru', 'bart', 'do', 'marquis')
 
 	def namer(self, field):
 		#pre
@@ -30,14 +30,16 @@ class eagle:
 			w_name = re.sub('[\t\r\n]', '', field.encode('ascii', 'ignore')).lower()
 		if 'anonymous' not in w_name:
 			w_name = re.split(";", w_name)[0]
-			w_name = re.sub("(?<=[`']) | (?=['`])", '', w_name) #6A, 4A-C
+			w_name = re.sub("(?<=[`'/+]) | (?=['`/+])", '', w_name) #6A, 4A-C
 			
 			out = HumanName(w_name)
 			out.middle = re.sub("^[a-z] |^[a-z]\. ", '', out.middle)
 			if " " in out.last:
 				out.last = re.sub("^[a-z] |^[a-z]\. ", '', out.last)
-			if re.sub("^[a-z] |^[a-z]\. ", '', out.first) == '' and len(out.middle) != 0:
+			if re.sub("^[a-z]\.|^[a-z]", '', out.first) == '' and len(out.middle) != 0:
 				out.first, out.middle = out.middle, ""
+			else:
+				out.first = re.sub("^[a-z] |^[a-z]\. ", '', out.first)
 			#post
 			
 			if out.middle.startswith("for ") or out.middle.startswith("- "): #7A, 1B, 3E
@@ -54,21 +56,27 @@ class eagle:
 
 			if " and " in out.middle or " & " in out.middle:
 				out.last = re.split("( and )|( & )", out.middle)[0]
-
-			if "and" in out.last or "&" in out.last:
+				out.middle = ""
+ 			if "and" in out.last or "&" in out.last:
 
 				if out.last.startswith("and ") or out.last.startswith("& "): #3F
 					out.last = HumanName(out.last).last
 				elif " and " in out.last or " & " in out.last:
 					out.last = re.sub("( and ).*|( & ).*", '', out.last)
-			out.first = re.split("( and )|&|/", out.first)[0]
-			out.last = re.split("/", out.last)[0]
+			out.first = re.split("( and )|&|/|\+", out.first)[0]
+			out.last = re.split("/", out.last)[0].strip()
+			if len(re.sub("[^a-z]", '', out.first)) == 1 and " " in out.last:
+				print True
+				out.first = out.last.split(" ")[0]
+				out.last = out.last.split(" ")[1]
 			out.capitalize()
 			first, last = out.first, out.last
 			if len(out.middle) > 0:
-				if first.endswith("-") or out.middle.startswith("-"):
+				if len(out.middle) == 1:
+					out.middle = ""
+				elif first.endswith("-") or out.middle.startswith("-"):
 					first += out.middle
-				elif type(field) == tuple:
+				else:
 					first += " %s" % out.middle #8A-B
 			if len(out.suffix) > 0:
 				last += " %s" % out.suffix #2A
@@ -87,7 +95,6 @@ class eagle:
 
 		r_head = False
 		count = 0
-		
 		for i, f in enumerate(self.files, 1):
 			people = []
 			

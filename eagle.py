@@ -20,13 +20,66 @@ class eagle:
 				
 				if not f.endswith("txt"): self.files.append(os.path.join(root,f))
 
-		CONSTANTS.titles.remove('guru')
+		CONSTANTS.titles.remove('guru', 'bart', 'do')
 
 	def process(self, r_node):
 		person = {'First Name': '', 'Last Name': '', 'Phone #s': '', 'Email': '',
 					'Move-In Date': '', 'Source 1': '', 'Source 2': '', 'Property': prop}
 	def write(self):
 		pass
+
+	def namer(self, field):
+		#pre
+		if type(field) == tuple:
+			w_name = re.sub('[\t\r\n]', '', ", ".join([x.encode('ascii', 'ignore') for x in field])).lower()
+		else:
+			w_name = re.sub('[\t\r\n]', '', field.encode('ascii', 'ignore')).lower()
+		w_name = re.split(";", w_name)[0]
+		w_name = re.sub("(?<=[`']) | (?=['`])", '', w_name) #6A, 4A-C
+		
+		out = HumanName(w_name)
+		out.middle = re.sub("^[a-z] |^[a-z]\. ", '', out.middle)
+		if " " in out.last:
+			out.last = re.sub("^[a-z] |^[a-z]\. ", '', out.last)
+		if re.sub("^[a-z] |^[a-z]\. ", '', out.first) == '' and len(out.middle) != 0:
+			out.first, out.middle = out.middle, ""
+		#post
+		
+		if out.middle.startswith("for ") or out.middle.startswith("- "): #7A, 1B, 3E
+			out.middle = "" 
+
+		if " for " in out.last:
+			out.last = re.sub(" for .*", '', out.last)
+
+		if len(out.last) == 0 and len(out.title) != 0: #9A
+			if " " in out.first:
+				out = HumanName(out.first)
+			else:
+				out.first, out.last = out.title, out.first
+
+		if " and " in out.middle or " & " in out.middle:
+			out.last = re.split("( and )|( & )", out.middle)[0]
+
+		if "and" in out.last or "&" in out.last:
+
+			if out.last.startswith("and ") or out.last.startswith("& "): #3F
+				out.last = HumanName(out.last).last
+			elif " and " in out.last or " & " in out.last:
+				out.last = re.sub("( and ).*|( & ).*", '', out.last)
+		out.first = re.split("( and )|&|/", out.first)[0]
+		out.last = re.split("/", out.last)[0]
+		out.capitalize()
+		first, last = out.first, out.last
+		if len(out.middle) > 0:
+			if first.endswith("-") or out.middle.startswith("-"):
+				first += out.middle
+			elif type(field) == tuple:
+				first += " %s" % out.middle #8A-B
+		if len(out.suffix) > 0:
+			last += " %s" % out.suffix #2A
+		return (first, last)
+
+
 
 
 	def run(self):
@@ -51,18 +104,16 @@ class eagle:
 					lasts = subnode.xpath("./td[@class='LeaseVarianceLast_x0020_Name']/text()")
 					f_name = subnode.xpath("./td[@class='LeaseVarianceHousehold_x0020_name']/text()")
 					person = {}
-					for item in zip(firsts, lasts):
+					for item in zip(lasts, firsts):
 						person = {'First Name': '', 'Last Name': '', 'Phone #s': '', 'Email': '',
 									'Move-In Date': '', 'Source 1': '', 'Source 2': '', 'Property': prop}
-						person['raw'] = re.sub('[\t\r\n]', '', item[1].strip())
-						person['raw'] += ", %s" % re.sub('[\t\r\n]', '', item[0].strip())
-						first = re.split(' and |&', item[0].encode('ascii', 'ignore'))[0].lower()
-						last = re.split(' and |&', item[1].encode('ascii', 'ignore'))[0].lower()
-						name = HumanName(first + " " + last)
-						name.capitalize()
-						
-						person['First Name'] = name.first
-						person['Last Name'] = name.last
+						if self.args.raw:
+							person['raw'] = re.sub('[\t\r\n]', '', item[1].strip())
+							person['raw'] += ", %s" % re.sub('[\t\r\n]', '', item[0].strip())
+						name = self.namer(item)
+						person['First Name'] = name[0]
+						person['Last Name'] = name[1]
+
 						try:
 							number = subnode.xpath("./td[@class='LeaseVarianceCell_x0020_Phone']/text()")[0].encode('ascii', 'ignore').strip()
 							if len(number) > 0: person['Phone #s'] += "Cell: %s;" % number
@@ -132,11 +183,14 @@ class eagle:
 									'Move-In Date': '', 'Source 1': '', 'Source 2': '', 'Property': prop}
 						
 						text = item
-						person['raw'] = re.sub('[\t\n\r]', '', text.strip())
-						name = HumanName(text.encode('ascii', 'ignore').strip().split(";")[0])
-						name.capitalize()
-						person['First Name'] = name.first
-						person['Last Name'] = name.last
+						if self.args.raw:
+							person['raw'] = re.sub('[\t\n\r]', '', text.strip())
+
+						name = self.namer(text)
+						person['First Name'] = name[0]
+						person['Last Name'] = name[1]
+
+
 						try:
 							number = subnode.xpath("./td[@class='LeaseVarianceCell_x0020_Phone']/text()")[0].encode('ascii', 'ignore').strip()
 							if len(number) > 0: person['Phone #s'] += "Cell: %s;" % number
@@ -207,14 +261,14 @@ class eagle:
 				traceback.print_exception(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2])
 
 			if not self.args.raw:
-				with open("A-LIST.csv", 'a') as w_file:
+				with open("A-LIST_test.csv", 'a') as w_file:
 					if len(people) > 0:
 						for person in people:
 							s1 = person['Source 1'].lower()
 							s2 = person['Source 2'].lower()
 
 							if ('apartment' in s1 and 'list' in s1) or ('apartment' in s2 and 'list' in s2):
-
+								
 								w_file.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (person['Property'], person['First Name'], person['Last Name'], person['Phone #s'], person['Email'], person['Move-In Date'], person['Source 1'], person['Source 2']))
 							else:
 								print "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (person['Property'], person['First Name'], person['Last Name'], person['Phone #s'], person['Email'], person['Move-In Date'], person['Source 1'], person['Source 2'])
@@ -222,12 +276,14 @@ class eagle:
 				 with open("RAW_(%s).csv" % (count/100000), 'a') as a_file:
 				 	if len(people) > 0:
 				 		for person in people:
-
+				 			
 				 			s1 = person['Source 1']
 				 			s2 = person['Source 2']
 				 			source = ''
-				 			if len(s1) > 0: source = s1
-				 			elif len(s2) > 0: source = s2
+				 			#if len(s1) > 0: source = s1
+				 			#elif len(s2) > 0: source = s2
+				 			
+				 			source = s2
 
 				 			a_file.write("%s\t%s\t%s\n" % (person['raw'].encode('ascii', 'ignore'), source, person['Property']))
 				 			count += 1
@@ -255,17 +311,19 @@ def main():
 	args = parser.parse_args()
 
 	if args.name:
-		CONSTANTS.titles.remove('guru')
-
+		test = eagle(args.infile, args)
+		size = 0
+		with open(args.infile, 'r') as r_file:
+			size = len(r_file.readlines())
 		with open(args.infile, 'r') as r_file:
 			reader = csv.reader(r_file, delimiter="\t")
 			writer = csv.writer(args.outfile)
 			out = []
-			for row in reader:
-				name = re.sub('[\t\r\n]', '', row[0].strip()).encode('ascii', 'ignore').lower()
-				name = HumanName(name)
-				name.capitalize()
-				writer.writerow([row[0], name.last, name.first])
+
+			for i, row in enumerate(reader, 1):
+				name = test.namer(row[0])
+				sys.stderr.write("Working on: %s of %s\n" % (i, size))
+				writer.writerow([row[0], name[1], name[0]])
 
 		
 	else:

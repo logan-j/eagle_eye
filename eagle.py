@@ -14,12 +14,25 @@ class eagle:
 	def __init__(self, directory, args):
 		self.files = []
 		self.args = args
+		self.keys = {}
 		for root, dirs, files in os.walk(directory):
 			
 			for f in files:
 				
 				if not f.endswith("txt"): self.files.append(os.path.join(root,f))
-
+		if args.keys != '':
+			try:
+				with open(self.args.keys, 'r') as r_file:
+					reader = csv.DictReader(r_file, delimiter="\t")
+					for row in reader:
+						w_row = {}
+						for key, val in dict.iteritems(row):
+							w_row[key.strip().lower()] = val.strip().lower()
+						if w_row['property id'] != '' or w_row['property id'] != 'x':
+							self.keys[w_row['pmc-prop']] = w_row['property id']
+			except Exception as inst:
+				sys.stderr.write("FATAL ERROR %s. Failure to read input file %s\n" % (inst, args.keys))
+		
 		CONSTANTS.titles.remove('guru', 'bart', 'do', 'marquis')
 
 	def namer(self, field):
@@ -66,7 +79,6 @@ class eagle:
 			out.first = re.split("( and )|&|/|\+", out.first)[0]
 			out.last = re.split("/", out.last)[0].strip()
 			if len(re.sub("[^a-z]", '', out.first)) == 1 and " " in out.last:
-				print True
 				out.first = out.last.split(" ")[0]
 				out.last = out.last.split(" ")[1]
 			out.capitalize()
@@ -90,7 +102,7 @@ class eagle:
 
 
 	def run(self):
-		headers = ["Property", "First Name", "Last Name", "Phone #s", "Email", "Move-In Date", "Source 1", "Source 2"]
+		headers = ["Property ID", "PMC-Prop", "First Name", "Last Name", "Phone #s", "Email", "Move-In Date", "Source 1", "Source 2"]
 		writer = csv.DictWriter(self.args.outfile, fieldnames=headers, delimiter="\t")
 
 		r_head = False
@@ -111,7 +123,8 @@ class eagle:
 					person = {}
 					for item in zip(lasts, firsts):
 						person = {'First Name': '', 'Last Name': '', 'Phone #s': '', 'Email': '',
-									'Move-In Date': '', 'Source 1': '', 'Source 2': '', 'Property': prop}
+									'Move-In Date': '', 'Source 1': '', 'Source 2': '', 'PMC-Prop': prop,
+									'Property ID': self.keys.get(prop.lower(), '')}
 						if self.args.raw:
 							person['raw'] = re.sub('[\t\r\n]', '', item[1].strip())
 							person['raw'] += ", %s" % re.sub('[\t\r\n]', '', item[0].strip())
@@ -184,7 +197,8 @@ class eagle:
 					
 					for item in f_name:
 						person = {'First Name': '', 'Last Name': '', 'Phone #s': '', 'Email': '',
-									'Move-In Date': '', 'Source 1': '', 'Source 2': '', 'Property': prop}
+									'Move-In Date': '', 'Source 1': '', 'Source 2': '', 'PMC-Prop': prop,
+									'Property ID': self.keys.get(prop.lower(), '')}
 						
 						text = item
 						if self.args.raw:
@@ -298,6 +312,8 @@ def main():
 	parser = argparse.ArgumentParser(description='')
 
 	parser.add_argument('infile', nargs='?', type=str)
+
+	parser.add_argument('-k', '--keys', nargs='?', type=str, default='')
 
 	parser.add_argument('-r', '--raw', action='store_true', default=False)
 

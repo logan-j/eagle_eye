@@ -123,7 +123,7 @@ class eagle:
 					person = {}
 					for item in zip(lasts, firsts):
 						person = {'First Name': '', 'Last Name': '', 'Phone #s': '', 'Email': '',
-									'Move-In Date': '', 'Source 1': '', 'Source 2': '', 'PMC-Prop': prop,
+									'Move-In Date': self.args.default, 'Source 1': '', 'Source 2': '', 'PMC-Prop': prop,
 									'Property ID': self.keys.get(prop.lower(), '')}
 						if self.args.raw:
 							person['raw'] = re.sub('[\t\r\n]', '', item[1].strip())
@@ -197,7 +197,7 @@ class eagle:
 					
 					for item in f_name:
 						person = {'First Name': '', 'Last Name': '', 'Phone #s': '', 'Email': '',
-									'Move-In Date': '', 'Source 1': '', 'Source 2': '', 'PMC-Prop': prop,
+									'Move-In Date': self.args.default, 'Source 1': '', 'Source 2': '', 'PMC-Prop': prop,
 									'Property ID': self.keys.get(prop.lower(), '')}
 						
 						text = item
@@ -312,6 +312,8 @@ def main():
 	parser = argparse.ArgumentParser(description='')
 
 	parser.add_argument('infile', nargs='?', type=str)
+
+	parser.add_argument('-d', '--default', nargs='?', type=str, default='')
 
 	parser.add_argument('-k', '--keys', nargs='?', type=str, default='')
 

@@ -86,12 +86,10 @@ class eagle:
 			if len(re.sub("[^A-Z]", '', out.first)) == 1 and " " in out.last:
 				out.first = out.last.split(" ")[0]
 				out.last = out.last.split(" ")[1]
-			if re.sub("^[A-Z]\.|^[A-Z]", '', out.middle) == '':
-				out.middle = ""
 			out.capitalize()
 			first, last = out.first, out.last
 			if len(out.middle) > 0:
-				if len(out.middle) == 1:
+				if re.sub("^[A-Z]\.|^[A-Z]", '', out.middle) == '':
 					out.middle = ""
 				elif first.endswith("-") or out.middle.startswith("-"):
 					first += out.middle

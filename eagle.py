@@ -38,28 +38,33 @@ class eagle:
 	def namer(self, field):
 		#pre
 		if type(field) == tuple:
-			w_name = re.sub('[\t\r\n]', '', ", ".join([x.encode('ascii', 'ignore') for x in field])).lower()
+			w_name = re.sub('[\t\r\n]', '', ", ".join([x.encode('ascii', 'ignore') for x in field])).upper()
 		else:
-			w_name = re.sub('[\t\r\n]', '', field.encode('ascii', 'ignore')).lower()
-		if 'anonymous' not in w_name:
-			w_name = re.split(";", w_name)[0]
+			w_name = re.sub('[\t\r\n]', '', field.encode('ascii', 'ignore')).upper()
+		if 'ANONYMOUS' not in w_name:
+			if ' FORMER ' not in w_name:
+				w_name = re.split(";", w_name)[0]
+			else:
+				w_name = re.split(";", w_name)[1]
+
 			w_name = re.sub("(?<=[`'/+]) | (?=['`/+])", '', w_name) #6A, 4A-C
 			
 			out = HumanName(w_name)
-			out.middle = re.sub("^[a-z] |^[a-z]\. ", '', out.middle)
+			out.middle = re.sub("^[A-Z] |^[A-Z]\. ", '', out.middle)
 			if " " in out.last:
-				out.last = re.sub("^[a-z] |^[a-z]\. ", '', out.last)
-			if re.sub("^[a-z]\.|^[a-z]", '', out.first) == '' and len(out.middle) != 0:
+				out.last = re.sub("^[A-Z] |^[A-Z]\. ", '', out.last)
+			if re.sub("^[A-Z]\.|^[A-Z]", '', out.first) == '' and len(out.middle) != 0:
 				out.first, out.middle = out.middle, ""
 			else:
-				out.first = re.sub("^[a-z] |^[a-z]\. ", '', out.first)
+				out.first = re.sub("^[A-Z] |^[A-Z]\. ", '', out.first)
+			
 			#post
 			
-			if out.middle.startswith("for ") or out.middle.startswith("- "): #7A, 1B, 3E
+			if out.middle.startswith("FOR ") or out.middle.startswith("- "): #7A, 1B, 3E
 				out.middle = "" 
 
-			if " for " in out.last:
-				out.last = re.sub(" for .*", '', out.last)
+			if " FOR " in out.last:
+				out.last = re.sub(" FOR .*", '', out.last)
 
 			if len(out.last) == 0 and len(out.title) != 0: #9A
 				if " " in out.first:
@@ -67,20 +72,22 @@ class eagle:
 				else:
 					out.first, out.last = out.title, out.first
 
-			if " and " in out.middle or " & " in out.middle:
-				out.last = re.split("( and )|( & )", out.middle)[0]
+			if " AND " in out.middle or " & " in out.middle:
+				out.last = re.split("( AND )|( & )", out.middle)[0]
 				out.middle = ""
- 			if "and" in out.last or "&" in out.last:
+ 			if "AND" in out.last or "&" in out.last:
 
-				if out.last.startswith("and ") or out.last.startswith("& "): #3F
+				if out.last.startswith("AND ") or out.last.startswith("& "): #3F
 					out.last = HumanName(out.last).last
-				elif " and " in out.last or " & " in out.last:
-					out.last = re.sub("( and ).*|( & ).*", '', out.last)
-			out.first = re.split("( and )|&|/|\+", out.first)[0]
+				elif " AND " in out.last or " & " in out.last:
+					out.last = re.sub("( AND ).*|( & ).*", '', out.last)
+			out.first = re.split("( AND )|&|/|\+", out.first)[0]
 			out.last = re.split("/", out.last)[0].strip()
-			if len(re.sub("[^a-z]", '', out.first)) == 1 and " " in out.last:
+			if len(re.sub("[^A-Z]", '', out.first)) == 1 and " " in out.last:
 				out.first = out.last.split(" ")[0]
 				out.last = out.last.split(" ")[1]
+			if re.sub("^[A-Z]\.|^[A-Z]", '', out.middle) == '':
+				out.middle = ""
 			out.capitalize()
 			first, last = out.first, out.last
 			if len(out.middle) > 0:
@@ -92,7 +99,6 @@ class eagle:
 					first += " %s" % out.middle #8A-B
 			if len(out.suffix) > 0:
 				last += " %s" % out.suffix #2A
-			
 			return (first, last)
 		else:
 			name = HumanName(w_name)

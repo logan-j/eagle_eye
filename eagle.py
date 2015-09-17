@@ -70,7 +70,7 @@ class eagle:
 				if " " in out.first:
 					out = HumanName(out.first)
 				else:
-					out.first, out.last = out.title, out.first
+					out.first, out.last = "", out.first
 
 			if " AND " in out.middle or " & " in out.middle:
 				out.last = re.split("( AND )|( & )", out.middle)[0]
@@ -137,36 +137,59 @@ class eagle:
 						person['Last Name'] = name[1]
 
 						try:
-							number = subnode.xpath("./td[@class='LeaseVarianceCell_x0020_Phone']/text()")[0].encode('ascii', 'ignore').strip()
-							if len(number) > 0: person['Phone #s'] += "Cell: %s;" % number
-						except:
-							pass
-						try:
 							number = subnode.xpath("./td[@class='LeaseVarianceHome_x0020_Phone']/text()")[0].encode('ascii', 'ignore').strip()
-							if len(number) > 0: person['Phone #s'] += "Home: %s;" % number
+							if len(number) > 0: person['Phone #s'] = re.sub("\D", '', number)
 						except:
 							pass
-						try:
-							number = subnode.xpath("./td[@class='LeaseVarianceWork_x0020_Phone']/text()")[0].encode('ascii', 'ignore').strip()
-							if len(number) > 0: person['Phone #s'] += "Work: %s;" % number
-						except:
-							pass
-						try:
-							source = subnode.xpath("./td[@class='LeaseVariance_x0031_st_x0020_Phone_x0020_Type']/text()")[0].encode('ascii', 'ignore').strip()
-							number = subnode.xpath("./td[@class='LeaseVariance_x0031_st_x0020_Phone_x0020_Number']/text()")[0].encode('ascii', 'ignore').strip()
-							if len(number) > 0 and len(source) > 0: person['Phone #s'] += "%s: %s;" % (source, number)
-						except:
-							pass
-						try:
-							source = subnode.xpath("./td[@class='LeaseVariance_x0032_nd_x0020_Phone_x0020_Type']/text()")[0].encode('ascii', 'ignore').strip()
-							number = subnode.xpath("./td[@class='LeaseVariance_x0032_nd_x0020_Phone_x0020_Number']/text()")[0].encode('ascii', 'ignore').strip()
-							if len(number) > 0 and len(source) > 0: person['Phone #s'] += "%s: %s;" % (source, number)
+
+						if len(person['Phone #s']) == 0:
+							try:
+								number = subnode.xpath("./td[@class='LeaseVarianceCell_x0020_Phone']/text()")[0].encode('ascii', 'ignore').strip()
+								if len(number) > 0: person['Phone #s'] = re.sub("\D", '', number)
+							except:
+								pass
 						
+						if len(person['Phone #s']) == 0:	
+							try:
+								number = subnode.xpath("./td[@class='LeaseVarianceWork_x0020_Phone']/text()")[0].encode('ascii', 'ignore').strip()
+								if len(number) > 0: person['Phone #s'] = re.sub("\D", '', number)
+							except:
+								pass
+						try:
+							source = subnode.xpath("./td[@class='LeaseVariance_x0031_st_x0020_Phone_x0020_Type']/text()")[0].encode('ascii', 'ignore').strip().lower()
+							number = subnode.xpath("./td[@class='LeaseVariance_x0031_st_x0020_Phone_x0020_Number']/text()")[0].encode('ascii', 'ignore').strip()
+							if len(number) > 0 and len(source) > 0:
+								if len(person['Phone #s']) > 0 and type(person['Phone #s']) == list:
+									if "home" in source:
+										person['Phone #s'] = [number, "home"]
+									elif "cell" in source and "home" not in person['Phone #s'][1]:
+										person['Phone #s'] = [number, "cell"]
+								else:
+									person['Phone #s'] = [number, source]
+
+
 						except:
 							pass
+						try:
+							source = subnode.xpath("./td[@class='LeaseVariance_x0032_nd_x0020_Phone_x0020_Type']/text()")[0].encode('ascii', 'ignore').strip().lower()
+							number = subnode.xpath("./td[@class='LeaseVariance_x0032_nd_x0020_Phone_x0020_Number']/text()")[0].encode('ascii', 'ignore').strip()
+							if len(number) > 0 and len(source) > 0:
+								if len(person['Phone #s']) > 0 and type(person['Phone #s']) == list:
+									if "home" in source:
+										person['Phone #s'] = [number, "home"]
+									elif "cell" in source and "home" not in person['Phone #s'][1]:
+										person['Phone #s'] = [number, "cell"]
+								else:
+									person['Phone #s'] = [number, source]
 
-						if person['Phone #s'].endswith(";"): person['Phone #s'] = person['Phone #s'][:-1]
+				
+						except:
+							pass
+						if type(person['Phone #s']) == list:
+							person['Phone #s'] = re.sub("\D", '', person['Phone #s'][0])
 
+
+						#if person['Phone #s'].endswith(";"): person['Phone #s'] = person['Phone #s'][:-1]
 						try:
 							email = subnode.xpath("./td[@class='LeaseVarianceE-mail']/text()")[0].encode('ascii', 'ignore').strip()
 							if len(email) > 0: person['Email'] = email
@@ -211,38 +234,60 @@ class eagle:
 						name = self.namer(text)
 						person['First Name'] = name[0]
 						person['Last Name'] = name[1]
-
-
-						try:
-							number = subnode.xpath("./td[@class='LeaseVarianceCell_x0020_Phone']/text()")[0].encode('ascii', 'ignore').strip()
-							if len(number) > 0: person['Phone #s'] += "Cell: %s;" % number
-						except:
-							pass
 						try:
 							number = subnode.xpath("./td[@class='LeaseVarianceHome_x0020_Phone']/text()")[0].encode('ascii', 'ignore').strip()
-							if len(number) > 0: person['Phone #s'] += "Home: %s;" % number
-						except:
-							pass
-						try:
-							number = subnode.xpath("./td[@class='LeaseVarianceWork_x0020_Phone']/text()")[0].encode('ascii', 'ignore').strip()
-							if len(number) > 0: person['Phone #s'] += "Work: %s;" % number
-						except:
-							pass
-						try:
-							source = subnode.xpath("./td[@class='LeaseVariance_x0031_st_x0020_Phone_x0020_Type']/text()")[0].encode('ascii', 'ignore').strip()
-							number = subnode.xpath("./td[@class='LeaseVariance_x0031_st_x0020_Phone_x0020_Number']/text()")[0].encode('ascii', 'ignore').strip()
-							if len(number) > 0 and len(source) > 0: person['Phone #s'] += "%s: %s;" % (source, number)
-						except:
-							pass
-						try:
-							source = subnode.xpath("./td[@class='LeaseVariance_x0032_nd_x0020_Phone_x0020_Type']/text()")[0].encode('ascii', 'ignore').strip()
-							number = subnode.xpath("./td[@class='LeaseVariance_x0032_nd_x0020_Phone_x0020_Number']/text()")[0].encode('ascii', 'ignore').strip()
-							if len(number) > 0 and len(source) > 0: person['Phone #s'] += "%s: %s;" % (source, number)
-						
+							if len(number) > 0: person['Phone #s'] = re.sub("\D", '', number)
 						except:
 							pass
 
-						if person['Phone #s'].endswith(";"): person['Phone #s'] = person['Phone #s'][:-1]
+						if len(person['Phone #s']) == 0:
+							try:
+								number = subnode.xpath("./td[@class='LeaseVarianceCell_x0020_Phone']/text()")[0].encode('ascii', 'ignore').strip()
+								if len(number) > 0: person['Phone #s'] = re.sub("\D", '', number)
+							except:
+								pass
+						
+						if len(person['Phone #s']) == 0:	
+							try:
+								number = subnode.xpath("./td[@class='LeaseVarianceWork_x0020_Phone']/text()")[0].encode('ascii', 'ignore').strip()
+								if len(number) > 0: person['Phone #s'] = re.sub("\D", '', number)
+							except:
+								pass
+						try:
+							source = subnode.xpath("./td[@class='LeaseVariance_x0031_st_x0020_Phone_x0020_Type']/text()")[0].encode('ascii', 'ignore').strip().lower()
+							number = subnode.xpath("./td[@class='LeaseVariance_x0031_st_x0020_Phone_x0020_Number']/text()")[0].encode('ascii', 'ignore').strip()
+							if len(number) > 0 and len(source) > 0:
+								if len(person['Phone #s']) > 0 and type(person['Phone #s']) == list:
+									if "home" in source:
+										person['Phone #s'] = [number, "home"]
+									elif "cell" in source and "home" not in person['Phone #s'][1]:
+										person['Phone #s'] = [number, "cell"]
+								else:
+									person['Phone #s'] = [number, source]
+
+
+						except:
+							pass
+						try:
+							source = subnode.xpath("./td[@class='LeaseVariance_x0032_nd_x0020_Phone_x0020_Type']/text()")[0].encode('ascii', 'ignore').strip().lower()
+							number = subnode.xpath("./td[@class='LeaseVariance_x0032_nd_x0020_Phone_x0020_Number']/text()")[0].encode('ascii', 'ignore').strip()
+							if len(number) > 0 and len(source) > 0:
+								if len(person['Phone #s']) > 0 and type(person['Phone #s']) == list:
+									if "home" in source:
+										person['Phone #s'] = [number, "home"]
+									elif "cell" in source and "home" not in person['Phone #s'][1]:
+										person['Phone #s'] = [number, "cell"]
+								else:
+									person['Phone #s'] = [number, source]
+
+				
+						except:
+							pass
+						if type(person['Phone #s']) == list:
+							person['Phone #s'] = re.sub("\D", '', person['Phone #s'][0])
+
+
+						#if person['Phone #s'].endswith(";"): person['Phone #s'] = person['Phone #s'][:-1]
 
 						try:
 							email = subnode.xpath("./td[@class='LeaseVarianceE-mail']/text()")[0].encode('ascii', 'ignore').strip()

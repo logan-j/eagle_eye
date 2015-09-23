@@ -11,6 +11,9 @@ import traceback
 from dateutil import parser
 from nameparser.config import CONSTANTS
 
+CONSTANTS.titles.remove('guru', 'bart', 'do', 'marquis')
+
+
 class eagle:
 	def __init__(self, directory, args):
 		self.files = []
@@ -34,7 +37,6 @@ class eagle:
 			except Exception as inst:
 				sys.stderr.write("FATAL ERROR %s. Failure to read input file %s\n" % (inst, args.keys))
 		
-		CONSTANTS.titles.remove('guru', 'bart', 'do', 'marquis')
 
 	@staticmethod
 	def namer(field):

@@ -8,6 +8,7 @@ import re
 import sys
 import os
 import traceback
+from dateutil import parser
 from nameparser.config import CONSTANTS
 
 class eagle:
@@ -320,7 +321,12 @@ class eagle:
 						except:
 							pass
 						
-						
+					try:
+						date = parser.parse(person['Move-In Date'])
+						person['Move-In Date'] = "%d-%02d-%02d" % (date.year, date.month, date.day)
+					except:
+						pass
+					
 					if len(person) > 0: people.append(person)
 			
 			except Exception as inst:

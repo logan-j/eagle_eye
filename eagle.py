@@ -36,7 +36,8 @@ class eagle:
 		
 		CONSTANTS.titles.remove('guru', 'bart', 'do', 'marquis')
 
-	def namer(self, field):
+	@staticmethod
+	def namer(field):
 		#pre
 		if type(field) == tuple:
 			w_name = re.sub('[\t\r\n]', '', ", ".join([x.encode('ascii', 'ignore') for x in field])).upper()

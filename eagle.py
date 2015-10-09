@@ -133,7 +133,7 @@ class eagle:
 					person = {}
 					for item in zip(lasts, firsts):
 						person = {'first_name': '', 'last_name': '', 'phone_number': '', 'email': '',
-									'move_in_date': self.args.default, 'lead_source': '', "pmc_prop": prop
+									'move_in_date': self.args.default, 'lead_source': '', "pmc_prop": prop,
 									'property_id': self.keys.get(prop.lower(), '')}
 						if self.args.raw:
 							person['raw'] = re.sub('[\t\r\n]', '', item[1].strip())

@@ -327,8 +327,9 @@ class eagle:
 							pass
 						
 					try:
-						date = parser.parse(person['move_in_date'])
-						person['move_in_date'] = "%d-%02d-%02d" % (date.year, date.month, date.day)
+						if person['move_in_date'] != "":
+							date = parser.parse(person['move_in_date'])
+							person['move_in_date'] = "%d-%02d-%02d" % (date.year, date.month, date.day)
 					except:
 						pass
 					

@@ -230,7 +230,7 @@ class eagle:
 					
 					for item in f_name:
 						person = {'first_name': '', 'last_name': '', 'phone_number': '', 'email': '',
-									'move_in_date': self.args.default, 'lead_source': '', "pmc_prop": prop
+									'move_in_date': self.args.default, 'lead_source': '', "pmc_prop": prop,
 									'property_id': self.keys.get(prop.lower(), '')}
 						
 						text = item

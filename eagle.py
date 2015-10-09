@@ -110,7 +110,7 @@ class eagle:
 
 
 	def run(self):
-		headers = ["property_id", "first_name", "last_name", "phone_number", "email", "move_in_date", "lead_source"]
+		headers = ["property_id", "pmc_prop", "first_name", "last_name", "phone_number", "email", "move_in_date", "lead_source"]
 		writer = csv.DictWriter(self.args.outfile, fieldnames=headers, delimiter="\t")
 
 		r_head = False
@@ -133,7 +133,7 @@ class eagle:
 					person = {}
 					for item in zip(lasts, firsts):
 						person = {'first_name': '', 'last_name': '', 'phone_number': '', 'email': '',
-									'move_in_date': self.args.default, 'lead_source': '',
+									'move_in_date': self.args.default, 'lead_source': '', "pmc_prop": prop
 									'property_id': self.keys.get(prop.lower(), '')}
 						if self.args.raw:
 							person['raw'] = re.sub('[\t\r\n]', '', item[1].strip())
@@ -230,7 +230,7 @@ class eagle:
 					
 					for item in f_name:
 						person = {'first_name': '', 'last_name': '', 'phone_number': '', 'email': '',
-									'move_in_date': self.args.default, 'lead_source': '',
+									'move_in_date': self.args.default, 'lead_source': '', "pmc_prop": prop
 									'property_id': self.keys.get(prop.lower(), '')}
 						
 						text = item
